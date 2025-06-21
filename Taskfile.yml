@@ -1,0 +1,34 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  run:
+    desc: Run the golang API server
+    cmds:
+      - task: start-db
+      - task: migrate-db
+      - task: build-app
+      - task: start-app
+
+  start-db:
+    desc: Start the Postgres service
+    cmds:
+      - docker compose up -d postgres
+
+  migrate-db:
+    desc: Run database migrations
+    deps: [start-db]
+    cmds:
+      - docker compose exec postgres sh -c "until pg_isready; do sleep 1; done"
+      - migrate -path ./migrations -database ${DB_LOCAL_URL} up
+
+  build-app:
+    cmds:
+      - docker compose build app
+
+  start-app:
+    cmds: 
+      - docker compose up app
