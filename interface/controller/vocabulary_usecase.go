@@ -8,4 +8,6 @@ import (
 
 type VocabularyUsecase interface {
 	AddVocabulary(ctx context.Context, vocabulary *domain.Vocabulary) (int64, error)
+
+	FetchVocabularyByNo(ctx context.Context, vocabularyNo int64) (*domain.Vocabulary, error)
 }

@@ -13,3 +13,13 @@ func ToModel(vocabulary *domain.Vocabulary) *model.VocabularyInput {
 		Sentence: vocabulary.Sentence,
 	}
 }
+
+// DB model -> Domain model
+func ToDomain(output *model.VocabularyOutput) *domain.Vocabulary {
+	return &domain.Vocabulary{
+		VocabularyNo: output.VocabularyNo,
+		Title:        output.Title,
+		Meaning:      output.Meaning,
+		Sentence:     output.Sentence,
+	}
+}

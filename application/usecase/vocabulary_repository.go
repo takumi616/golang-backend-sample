@@ -8,4 +8,6 @@ import (
 
 type VocabularyRepository interface {
 	Insert(ctx context.Context, vocabulary *domain.Vocabulary) (int64, error)
+
+	SelectByVocabularyNo(ctx context.Context, vocabularyNo int64) (*domain.Vocabulary, error)
 }
