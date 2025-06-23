@@ -28,7 +28,7 @@ func (r *VocabularyRepository) Insert(ctx context.Context, vocabulary *domain.Vo
 	// Begin a transaction
 	tx, err := r.Db.BeginTx(ctx, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to begin a transaction", "error", err)
+		slog.ErrorContext(ctx, "failed to begin a transaction", slog.String("error", err.Error()))
 		return 0, err
 	}
 	defer tx.Rollback()
@@ -42,23 +42,25 @@ func (r *VocabularyRepository) Insert(ctx context.Context, vocabulary *domain.Vo
 	).Scan(&vocabularyNo)
 
 	// sql.ErrNoRows is returned when an insert proccess is skipped with ON CONFLICT DO NOTHING
-	if err == sql.ErrNoRows {
-		slog.ErrorContext(ctx, "duplicate vocabulary detected", "error", err, "title", vocabModel.Title)
+	if errors.Is(err, sql.ErrNoRows) {
+		slog.WarnContext(
+			ctx, "duplicate vocabulary detected", slog.Int64("vocabularyNo", vocabularyNo), slog.String("error", err.Error()),
+		)
 		return 0, err
 	}
 
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to insert a vocabulary", "error", err)
+		slog.ErrorContext(ctx, "failed to insert a vocabulary", slog.String("error", err.Error()))
 		return 0, err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		slog.ErrorContext(ctx, "failed to commit the transaction", "error", err)
+		slog.ErrorContext(ctx, "failed to commit the transaction", slog.String("error", err.Error()))
 		return 0, err
 	}
 
-	slog.InfoContext(ctx, "new vocabulary was inserted successfully", "vocabulary_no", vocabularyNo)
+	slog.InfoContext(ctx, "new vocabulary was inserted successfully", slog.Int64("vocabularyNo", vocabularyNo))
 	return vocabularyNo, nil
 }
 
