@@ -3,9 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 
 	"github.com/takumi616/golang-backend-sample/domain"
+	"github.com/takumi616/golang-backend-sample/infrastructure/db/repository/model"
 	"github.com/takumi616/golang-backend-sample/infrastructure/db/repository/transformer"
 )
 
@@ -58,4 +60,35 @@ func (r *VocabularyRepository) Insert(ctx context.Context, vocabulary *domain.Vo
 
 	slog.InfoContext(ctx, "new vocabulary was inserted successfully", "vocabulary_no", vocabularyNo)
 	return vocabularyNo, nil
+}
+
+func (r *VocabularyRepository) SelectByVocabularyNo(ctx context.Context, vocabularyNo int64) (*domain.Vocabulary, error) {
+	// Execute an select process
+	var row model.VocabularyOutput
+	err := r.Db.QueryRowContext(
+		ctx,
+		"SELECT vocabulary_no, title, meaning, sentence FROM vocabularies WHERE vocabulary_no = $1",
+		vocabularyNo,
+	).Scan(&row.VocabularyNo, &row.Title, &row.Meaning, &row.Sentence)
+
+	// Not found by specified vocabularyNo
+	if errors.Is(err, sql.ErrNoRows) {
+		slog.WarnContext(
+			ctx, "no vocabulary found", slog.Int64("vocabularyNo", vocabularyNo), slog.String("error", err.Error()),
+		)
+		return nil, err
+	}
+
+	if err != nil {
+		slog.ErrorContext(
+			ctx, "failed to query vocabulary", slog.Int64("vocabularyNo", vocabularyNo), slog.String("error", err.Error()),
+		)
+		return nil, err
+	}
+
+	// Transform the selected row into domain model
+	vocabulary := transformer.ToDomain(&row)
+
+	slog.InfoContext(ctx, "vocabulary fetched successfully", slog.Int64("vocabularyNo", vocabularyNo))
+	return vocabulary, nil
 }

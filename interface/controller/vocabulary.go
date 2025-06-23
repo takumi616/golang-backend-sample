@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/takumi616/golang-backend-sample/interface/controller/helper"
 	"github.com/takumi616/golang-backend-sample/interface/controller/request"
@@ -62,4 +65,40 @@ func (c *VocabularyController) AddVocabulary(w http.ResponseWriter, r *http.Requ
 
 	// Write a returned result to the response body
 	helper.WriteResponse(ctx, w, http.StatusCreated, response.VocabularyNoRes{VocabularyNo: vocabularyNo})
+}
+
+func (c *VocabularyController) FetchVocabularyByNo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get the vocabularyNo from the request path
+	vocabularyNo, err := strconv.Atoi(r.PathValue("vocabularyNo"))
+	if err != nil {
+		slog.ErrorContext(ctx, "invalid path value", slog.String("error", err.Error()))
+		helper.WriteResponse(
+			ctx, w, http.StatusBadRequest,
+			response.ErrorRes{Message: "Invalid request path value. Please check your http request path."},
+		)
+		return
+	}
+
+	// Execute the application layer logic
+	vocabulary, err := c.Usecase.FetchVocabularyByNo(ctx, int64(vocabularyNo))
+	if errors.Is(err, sql.ErrNoRows) {
+		helper.WriteResponse(
+			ctx, w, http.StatusNotFound,
+			response.ErrorRes{Message: "Failed to get the vocabulary since specified data may not be registered."},
+		)
+		return
+	}
+
+	if err != nil {
+		helper.WriteResponse(
+			ctx, w, http.StatusInternalServerError,
+			response.ErrorRes{Message: "Failed to get the vocabulary due to a server error."},
+		)
+		return
+	}
+
+	// Write a returned result to the response body
+	helper.WriteResponse(ctx, w, http.StatusOK, transformer.ToResponse(vocabulary))
 }

@@ -19,3 +19,7 @@ func NewVocabularyUsecase(repository VocabularyRepository) *VocabularyUsecase {
 func (u *VocabularyUsecase) AddVocabulary(ctx context.Context, vocabulary *domain.Vocabulary) (int64, error) {
 	return u.Repository.Insert(ctx, vocabulary)
 }
+
+func (u *VocabularyUsecase) FetchVocabularyByNo(ctx context.Context, vocabularyNo int64) (*domain.Vocabulary, error) {
+	return u.Repository.SelectByVocabularyNo(ctx, vocabularyNo)
+}
