@@ -30,7 +30,7 @@ func (c *VocabularyController) AddVocabulary(w http.ResponseWriter, r *http.Requ
 	// Read http request body
 	var req request.VocabularyReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.ErrorContext(ctx, "failed to read a request body", "error", err)
+		slog.ErrorContext(ctx, "failed to read a request body", slog.String("error", err.Error()))
 		helper.WriteResponse(
 			ctx, w, http.StatusBadRequest,
 			response.ErrorRes{Message: "Invalid request format. Failed to parse JSON."},
@@ -41,7 +41,7 @@ func (c *VocabularyController) AddVocabulary(w http.ResponseWriter, r *http.Requ
 
 	// Validation check
 	if err := req.Validate(); err != nil {
-		slog.ErrorContext(ctx, "invalid request parameters", "error", err)
+		slog.ErrorContext(ctx, "invalid request parameters", slog.String("error", err.Error()))
 		helper.WriteResponse(
 			ctx, w, http.StatusBadRequest,
 			response.ErrorRes{Message: "Invalid input parameters. Please check your request."},
@@ -55,7 +55,6 @@ func (c *VocabularyController) AddVocabulary(w http.ResponseWriter, r *http.Requ
 	// Execute the application layer logic
 	vocabularyNo, err := c.Usecase.AddVocabulary(ctx, vocabulary)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get the vocabularyNo", "error", err)
 		helper.WriteResponse(
 			ctx, w, http.StatusInternalServerError,
 			response.ErrorRes{Message: "Failed to add the vocabulary due to a server error."},
