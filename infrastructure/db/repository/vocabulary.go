@@ -65,7 +65,7 @@ func (r *VocabularyRepository) Insert(ctx context.Context, vocabulary *domain.Vo
 }
 
 func (r *VocabularyRepository) SelectByVocabularyNo(ctx context.Context, vocabularyNo int64) (*domain.Vocabulary, error) {
-	// Execute an select process
+	// Execute a select process
 	var row model.VocabularyOutput
 	err := r.Db.QueryRowContext(
 		ctx,
@@ -93,4 +93,36 @@ func (r *VocabularyRepository) SelectByVocabularyNo(ctx context.Context, vocabul
 
 	slog.InfoContext(ctx, "vocabulary fetched successfully", slog.Int64("vocabularyNo", vocabularyNo))
 	return vocabulary, nil
+}
+
+func (r *VocabularyRepository) SelectAll(ctx context.Context) ([]*domain.Vocabulary, error) {
+	// Execute a select process
+	rows, err := r.Db.QueryContext(
+		ctx, "SELECT vocabulary_no, title, meaning, sentence FROM vocabularies ORDER BY vocabulary_no ASC",
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to query all vocabularies", slog.String("error", err.Error()))
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Copy the selected columns into the domain model
+	var vocabularyList []*domain.Vocabulary
+	for rows.Next() {
+		var vocabulary model.VocabularyOutput
+		if err := rows.Scan(&vocabulary.VocabularyNo, &vocabulary.Title, &vocabulary.Meaning, &vocabulary.Sentence); err != nil {
+			slog.ErrorContext(ctx, "failed to scan vocabulary row", slog.String("error", err.Error()))
+			return nil, err
+		}
+		vocabularyList = append(vocabularyList, transformer.ToDomain(&vocabulary))
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		slog.ErrorContext(ctx, "row iteration error", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "all vocabularies were fetched successfully", slog.Int("count", len(vocabularyList)))
+	return vocabularyList, nil
 }
