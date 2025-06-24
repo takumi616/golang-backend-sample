@@ -101,3 +101,23 @@ func (c *VocabularyController) FetchVocabularyByNo(w http.ResponseWriter, r *htt
 	// Write a returned result to the response body
 	helper.WriteResponse(ctx, w, http.StatusOK, transformer.ToResponse(vocabulary))
 }
+
+func (c *VocabularyController) FetchVocabularyList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Execute the application layer logic
+	vocabularyList, err := c.Usecase.FetchVocabularyList(ctx)
+	if err != nil {
+		helper.WriteResponse(ctx, w, http.StatusInternalServerError, response.ErrorRes{Message: "Failed to get the vocabularies due to a server error."})
+		return
+	}
+
+	// Transform the domain model into the response struct
+	var vocabularyResponse []*response.VocabularyRes
+	for _, vocabulary := range vocabularyList {
+		vocabularyResponse = append(vocabularyResponse, transformer.ToResponse(vocabulary))
+	}
+
+	// Write a returned result to the response body
+	helper.WriteResponse(ctx, w, http.StatusOK, vocabularyResponse)
+}
