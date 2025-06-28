@@ -126,3 +126,46 @@ func (r *VocabularyRepository) SelectAll(ctx context.Context) ([]*domain.Vocabul
 	slog.InfoContext(ctx, "all vocabularies were fetched successfully", slog.Int("count", len(vocabularyList)))
 	return vocabularyList, nil
 }
+
+func (r *VocabularyRepository) Update(ctx context.Context, vocabularyNo int64, vocabulary *domain.Vocabulary) (int64, error) {
+	// Transform the received domain model into DB model
+	vocabModel := transformer.ToModel(vocabulary)
+
+	// Begin a transaction
+	tx, err := r.Db.BeginTx(ctx, nil)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to begin a transaction", slog.String("error", err.Error()))
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// Execute the update process
+	var updated int64
+	err = tx.QueryRowContext(
+		ctx, "UPDATE vocabularies SET title = $1, meaning = $2, sentence = $3 WHERE vocabulary_no = $4 RETURNING vocabulary_no",
+		vocabModel.Title, vocabModel.Meaning,
+		vocabModel.Sentence, vocabularyNo,
+	).Scan(&updated)
+
+	// Not found by specified vocabularyNo
+	if errors.Is(err, sql.ErrNoRows) {
+		slog.WarnContext(
+			ctx, "no vocabulary found", slog.Int64("vocabularyNo", vocabularyNo), slog.String("error", err.Error()),
+		)
+		return 0, err
+	}
+
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update the vocabulary", slog.String("error", err.Error()))
+		return 0, err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		slog.ErrorContext(ctx, "failed to commit the transaction", slog.String("error", err.Error()))
+		return 0, err
+	}
+
+	slog.InfoContext(ctx, "the vocabulary was updated successfully", slog.Int64("vocabularyNo", updated))
+	return updated, nil
+}
