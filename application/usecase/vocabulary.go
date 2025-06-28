@@ -27,3 +27,7 @@ func (u *VocabularyUsecase) FetchVocabularyByNo(ctx context.Context, vocabularyN
 func (u *VocabularyUsecase) FetchVocabularyList(ctx context.Context) ([]*domain.Vocabulary, error) {
 	return u.Repository.SelectAll(ctx)
 }
+
+func (u *VocabularyUsecase) UpdateVocabulary(ctx context.Context, vocabularyNo int64, vocabulary *domain.Vocabulary) (int64, error) {
+	return u.Repository.Update(ctx, vocabularyNo, vocabulary)
+}

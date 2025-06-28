@@ -12,4 +12,6 @@ type VocabularyRepository interface {
 	SelectByVocabularyNo(ctx context.Context, vocabularyNo int64) (*domain.Vocabulary, error)
 
 	SelectAll(ctx context.Context) ([]*domain.Vocabulary, error)
+
+	Update(ctx context.Context, vocabularyNo int64, vocabulary *domain.Vocabulary) (int64, error)
 }
