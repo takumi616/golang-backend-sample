@@ -164,11 +164,47 @@ func (c *VocabularyController) UpdateVocabulary(w http.ResponseWriter, r *http.R
 	if err != nil {
 		helper.WriteResponse(
 			ctx, w, http.StatusInternalServerError,
-			response.ErrorRes{Message: "Failed to get the vocabularies due to a server error."},
+			response.ErrorRes{Message: "Failed to update the vocabulary due to a server error."},
 		)
 		return
 	}
 
 	// Write a returned result to the response body
 	helper.WriteResponse(ctx, w, http.StatusOK, response.VocabularyNoRes{VocabularyNo: updated})
+}
+
+func (c *VocabularyController) DeleteVocabulary(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get the vocabularyNo from the request path
+	vocabularyNo, err := strconv.Atoi(r.PathValue("vocabularyNo"))
+	if err != nil {
+		slog.ErrorContext(ctx, "invalid path value", slog.String("error", err.Error()))
+		helper.WriteResponse(
+			ctx, w, http.StatusBadRequest,
+			response.ErrorRes{Message: "Invalid request path value. Please check your http request path."},
+		)
+		return
+	}
+
+	// Execute the application layer logic
+	rowsAffected, err := c.Usecase.DeleteVocabulary(ctx, int64(vocabularyNo))
+	if errors.Is(err, sql.ErrNoRows) {
+		helper.WriteResponse(
+			ctx, w, http.StatusNotFound,
+			response.ErrorRes{Message: "Failed to delete the vocabulary since specified data may not be registered."},
+		)
+		return
+	}
+
+	if err != nil {
+		helper.WriteResponse(
+			ctx, w, http.StatusInternalServerError,
+			response.ErrorRes{Message: "Failed to delete the vocabulary due to a server error."},
+		)
+		return
+	}
+
+	// Write a returned result to the response body
+	helper.WriteResponse(ctx, w, http.StatusOK, response.RowsAffectedRes{RowsAffected: rowsAffected})
 }

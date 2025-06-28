@@ -169,3 +169,44 @@ func (r *VocabularyRepository) Update(ctx context.Context, vocabularyNo int64, v
 	slog.InfoContext(ctx, "the vocabulary was updated successfully", slog.Int64("vocabularyNo", updated))
 	return updated, nil
 }
+
+func (r *VocabularyRepository) Delete(ctx context.Context, vocabularyNo int64) (int64, error) {
+	// Begin a transaction
+	tx, err := r.Db.BeginTx(ctx, nil)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to begin a transaction", slog.String("error", err.Error()))
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// Execute the update process
+	result, err := tx.ExecContext(
+		ctx, "DELETE FROM vocabularies WHERE vocabulary_no = $1", vocabularyNo,
+	)
+
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to delete the vocabulary", slog.String("error", err.Error()))
+		return 0, err
+	}
+
+	// Check rows affected number
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get a rows affected", slog.String("error", err.Error()))
+		return 0, err
+	}
+
+	if rowsAffected == 0 {
+		slog.WarnContext(ctx, "no vocabulary was deleted", slog.Int64("vocabularyNo", vocabularyNo))
+		return 0, sql.ErrNoRows
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		slog.ErrorContext(ctx, "failed to commit the transaction", slog.String("error", err.Error()))
+		return 0, err
+	}
+
+	slog.InfoContext(ctx, "the vocabulary was deleted successfully", slog.Int64("rowsAffected", rowsAffected))
+	return rowsAffected, nil
+}

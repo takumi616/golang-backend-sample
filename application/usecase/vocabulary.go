@@ -31,3 +31,7 @@ func (u *VocabularyUsecase) FetchVocabularyList(ctx context.Context) ([]*domain.
 func (u *VocabularyUsecase) UpdateVocabulary(ctx context.Context, vocabularyNo int64, vocabulary *domain.Vocabulary) (int64, error) {
 	return u.Repository.Update(ctx, vocabularyNo, vocabulary)
 }
+
+func (u *VocabularyUsecase) DeleteVocabulary(ctx context.Context, vocabularyNo int64) (int64, error) {
+	return u.Repository.Delete(ctx, vocabularyNo)
+}

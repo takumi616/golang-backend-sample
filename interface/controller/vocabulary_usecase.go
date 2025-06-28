@@ -14,4 +14,6 @@ type VocabularyUsecase interface {
 	FetchVocabularyList(ctx context.Context) ([]*domain.Vocabulary, error)
 
 	UpdateVocabulary(ctx context.Context, vocabularyNo int64, vocabulary *domain.Vocabulary) (int64, error)
+
+	DeleteVocabulary(ctx context.Context, vocabularyNo int64) (int64, error)
 }
